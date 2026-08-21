@@ -1,0 +1,4 @@
+# Real AR data and generated deliverables must never enter version control.
+data/
+output/
+__pycache__/
