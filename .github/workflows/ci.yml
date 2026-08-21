@@ -1,0 +1,36 @@
+# CI for this repository.
+#
+# Replaces the stock Node.js template (npm ci / npm test), which failed on
+# every run because this repo has no package.json or lock file. The Python
+# job below exercises the ar-engine pipeline end to end on synthetic data,
+# including its hard reconciliation tie-outs.
+
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  ar-engine:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: pip install -r ar-engine/requirements.txt
+      - name: Run full pipeline on sample data (tie-outs are hard gates)
+        run: python3 ar-engine/run_month_end.py --sample
+      - name: Assert deliverables exist
+        run: |
+          ls "ar-engine/output"/AR\ Aging\ Report\ -\ *.xlsx
+          ls "ar-engine/output"/AR\ Aging\ Dashboard\ -\ *.html
+          ls ar-engine/output/statements/index.html
+          ls ar-engine/output/reminders/_summary.txt
